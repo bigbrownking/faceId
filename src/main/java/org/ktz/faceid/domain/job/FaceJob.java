@@ -56,7 +56,8 @@ public class FaceJob {
 
     @Column(name = "error_code")
     private String errorCode;
-    @Column(name = "error_message")
+
+    @Column(name = "error_message", columnDefinition = "text")
     private String errorMessage;
 
     @Column(name = "created_at", nullable = false)

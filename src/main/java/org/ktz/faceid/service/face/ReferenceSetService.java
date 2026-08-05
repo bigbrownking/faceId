@@ -28,16 +28,19 @@ public class ReferenceSetService {
     /** poseEmbeddings: pose name -> embedding. FRONT is stored as trusted. */
     @Transactional
     public FaceReferenceSet createActiveSet(Long userId, Map<String, float[]> poseEmbeddings) {
-        // supersede any existing active set
-        setRepo.findByUserIdAndStatus(userId, ReferenceStatus.ACTIVE).ifPresent(old -> {
-            old.setStatus(ReferenceStatus.SUPERSEDED);
-            setRepo.save(old);
-        });
+        boolean anonymous = (userId == null);
+
+        if (!anonymous) {
+            setRepo.findByUserIdAndStatus(userId, ReferenceStatus.ACTIVE).ifPresent(old -> {
+                old.setStatus(ReferenceStatus.SUPERSEDED);
+                setRepo.save(old);
+            });
+        }
 
         FaceReferenceSet set = new FaceReferenceSet();
         set.setId(UUID.randomUUID());
         set.setUserId(userId);
-        set.setStatus(ReferenceStatus.ACTIVE);
+        set.setStatus(anonymous ? ReferenceStatus.PENDING : ReferenceStatus.ACTIVE);
         set.setEmbeddingVersion(embeddingVersion);
         setRepo.save(set);
 

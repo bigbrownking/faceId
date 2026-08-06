@@ -9,9 +9,9 @@ import java.util.Map;
 
 /**
  * MiniFASNet-V2 face anti-spoofing (Silent-Face-Anti-Spoofing).
- * Input: (1,3,80,80) float32 BGR, pixel/255.
- * Output: 3-class softmax [live, print-attack, replay-attack].
- * Liveness score = p[live].
+ * Input: (1,3,80,80) float32 BGR, raw pixel values [0,255] (NO /255 normalization).
+ * Output: 3-class softmax; liveness class = index 1.
+ * Liveness score = p[1].
  *
  * Crop rule: 2.7x margin box around the face bbox center, resized to 80x80, NO alignment.
  */
@@ -44,7 +44,8 @@ public class AntiSpoofDetector {
             float[][] raw = (float[][]) out.get(0).getValue();
             float[] logits = raw[0];
             float[] probs = softmax(logits);
-            return probs[0]; // p[live]
+            System.out.println("ANTISPOOF probs=" + java.util.Arrays.toString(probs));
+            return probs[1];
         }
     }
 
@@ -71,9 +72,9 @@ public class AntiSpoofDetector {
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int p = (y * w + x) * 3;
-                float b = (px[p] & 0xFF) / 255f;
-                float g = (px[p + 1] & 0xFF) / 255f;
-                float r = (px[p + 2] & 0xFF) / 255f;
+                float b = (px[p] & 0xFF);
+                float g = (px[p + 1] & 0xFF);
+                float r = (px[p + 2] & 0xFF);
                 int pos = y * w + x;
                 // keep BGR channel order in CHW
                 chw[pos]             = b;

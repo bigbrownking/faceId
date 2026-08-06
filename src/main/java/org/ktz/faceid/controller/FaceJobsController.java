@@ -45,10 +45,9 @@ public class FaceJobsController {
         FaceJob job = jobService.create(JobType.PREPARE_REFERENCE_SET, userId,
                 meta.challengeId(), Instant.now().plus(Duration.ofMinutes(10)));
 
-        Long uid = userId; // may be null for anonymous prepare
         jobProcessor.run(job.getJobId(), () -> {
             try {
-                return bodies.buildReferenceSet(uid, meta.challengeId(), false, frames);
+                return bodies.buildReferenceSet(job.getJobId(), userId, meta.challengeId(), false, frames);
             } catch (Exception e) { throw new RuntimeException(e); }
         });
 
@@ -75,7 +74,7 @@ public class FaceJobsController {
 
         jobProcessor.run(job.getJobId(), () -> {
             try {
-                return bodies.buildReferenceSet(userId, meta.challengeId(), true, frames);
+                return bodies.buildReferenceSet(job.getJobId(), userId, meta.challengeId(), true, frames);
             } catch (Exception e) { throw new RuntimeException(e); }
         });
 
@@ -106,7 +105,7 @@ public class FaceJobsController {
 
         jobProcessor.run(job.getJobId(), () -> {
             try {
-                return bodies.verify(userId, meta.challengeId(), frames);
+                return bodies.verify(job.getJobId(), userId, meta.challengeId(), frames);
             } catch (Exception e) { throw new RuntimeException(e); }
         });
 

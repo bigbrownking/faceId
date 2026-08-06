@@ -107,4 +107,22 @@ public class EnvelopeCrypto {
         for (int i = 0; i < v.length; i++) v[i] = bb.getFloat();
         return v;
     }
+    public byte[] sealToBlob(byte[] plaintext) {
+        Sealed s = seal(plaintext);
+        java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(
+                4 + s.wrappedDek().length + s.ciphertext().length);
+        bb.putInt(s.wrappedDek().length);
+        bb.put(s.wrappedDek());
+        bb.put(s.ciphertext());
+        return bb.array();
+    }
+    public byte[] openBlob(byte[] blob) {
+        java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(blob);
+        int wlen = bb.getInt();
+        byte[] wrapped = new byte[wlen];
+        bb.get(wrapped);
+        byte[] ct = new byte[bb.remaining()];
+        bb.get(ct);
+        return open(ct, wrapped);
+    }
 }

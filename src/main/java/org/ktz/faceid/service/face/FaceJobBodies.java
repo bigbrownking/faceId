@@ -5,6 +5,7 @@ import org.ktz.faceid.config.LivenessMode;
 import org.ktz.faceid.config.MatchingProperties;
 import org.ktz.faceid.domain.reference.FaceReferenceSet;
 import org.ktz.faceid.onnx.FaceEngine;
+import org.ktz.faceid.service.capture.CaptureService;
 import org.ktz.faceid.service.challenge.ChallengeService;
 import org.ktz.faceid.service.job.JobRejectedException;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ public class FaceJobBodies {
     private final ReferenceSetService referenceSetService;
     private final ChallengeService challengeService;
     private final MatchingProperties matching;
+    private final CaptureService captureService;
 
     @Value("${face.liveness-mode}") private String livenessModeRaw;
     @Value("${face.embedding-version}") private String embeddingVersion;
@@ -37,7 +39,8 @@ public class FaceJobBodies {
     }
 
     /** PREPARE_REFERENCE_SET / ENROLL_REFERENCE_SET: 3 poses, build a new active set. */
-    public Map<String, Object> buildReferenceSet(Long userId,
+    public Map<String, Object> buildReferenceSet(UUID jobId,
+                                                 Long userId,
                                                  UUID challengeId,
                                                  boolean isEnroll,
                                                  LinkedHashMap<String, byte[]> frames) throws Exception {
@@ -53,6 +56,10 @@ public class FaceJobBodies {
 
         for (Map.Entry<String, byte[]> f : frames.entrySet()) {
             String action = f.getKey();                    // HOLD_FRONT / TURN_LEFT / TURN_RIGHT
+
+            // сохраняем эталонное фото (no-op если userId == null, т.е. анонимный prepare)
+            captureService.saveReference(userId, jobId, action, f.getValue());
+
             FrameAnalyzer.AnalyzedFrame af = frameAnalyzer.analyze(action, f.getValue());
             String pose = actionToPose(action);
             poseEmbeddings.put(pose, af.embedding());
@@ -98,7 +105,8 @@ public class FaceJobBodies {
     }
 
     /** VERIFY: 2 frames (FRONT + one turn), match FRONT against trusted reference. */
-    public Map<String, Object> verify(Long userId,
+    public Map<String, Object> verify(UUID jobId,
+                                      Long userId,
                                       UUID challengeId,
                                       LinkedHashMap<String, byte[]> frames) throws Exception {
         if (!referenceSetService.hasTrustedFront(userId)) {
@@ -113,6 +121,9 @@ public class FaceJobBodies {
 
         for (Map.Entry<String, byte[]> f : frames.entrySet()) {
             String action = f.getKey();
+
+            captureService.saveAttempt(userId, jobId, action, f.getValue());
+
             FrameAnalyzer.AnalyzedFrame af = frameAnalyzer.analyze(action, f.getValue());
             all.add(af.embedding());
             minLive = Math.min(minLive, af.liveScore());

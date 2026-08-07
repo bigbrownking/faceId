@@ -29,7 +29,7 @@ public class RetentionJob {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void purgeExpired() {
-        List<FaceCapture> expired = repo.findByRetentionUntilBefore(Instant.now());
+        List<FaceCapture> expired = repo.findByRetentionUntilBeforeAndCaptureTypeNot(Instant.now(), "REFERENCE");
         int deleted = 0;
         for (FaceCapture c : expired) {
             try {

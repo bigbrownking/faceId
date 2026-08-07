@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FaceCaptureRepository extends JpaRepository<FaceCapture, UUID> {
-    List<FaceCapture> findByRetentionUntilBefore(Instant now);
+    List<FaceCapture> findByRetentionUntilBeforeAndCaptureTypeNot(Instant now, String captureType);
     List<FaceCapture> findByUserIdAndCaptureTypeOrderByCapturedAtDesc(Long userId, String captureType);
 }

@@ -14,7 +14,6 @@ public class ConsistencyChecker {
     @Value("${face.consistency-min-cosine:0.28}")
     private double minCosine;
 
-    /** All embeddings must be mutually similar enough (same person). */
     public void ensureSamePerson(List<float[]> embeddings) {
         for (int i = 0; i < embeddings.size(); i++) {
             for (int j = i + 1; j < embeddings.size(); j++) {
